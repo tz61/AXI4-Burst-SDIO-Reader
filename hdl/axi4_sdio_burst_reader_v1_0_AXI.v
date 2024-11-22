@@ -3,7 +3,7 @@
 
 module axi4_sdio_burst_reader_v1_0_AXI #(
     // Users to add parameters here
-    parameter integer SDIO_BURST_SECTOR_COUNT = 2,
+    parameter integer WRITE_BEATS_COUNT = 2,
     // User parameters ends 
     // Do not modify the parameters beyond this line
 
@@ -20,11 +20,12 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 ) (
     // Users to add ports here
     output wire [ 5:0] bram_addr,
-    input  wire [63:0] bram_data,
     // User ports ends
     // Do not modify the ports beyond this line
 
-    // Initiate AXI transactions
+    // Init whole burst write
+    input wire start_whole_burst,
+    // Initiate single sector burst write
     input wire single_sector_burst,
     // Asserts when transaction is complete
     output wire TXN_DONE,
@@ -63,8 +64,6 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     // Write address ready. This signal indicates that
     // the slave is ready to accept an address and associated control signals
     input wire M_AXI_AWREADY,
-    // Master Interface Write Data.
-    output wire [C_M_AXI_DATA_WIDTH-1 : 0] M_AXI_WDATA,
     // Write strobes. This signal indicates which byte
     // lanes hold valid data. There is one write strobe
     // bit for each eight bits of the write data bus.
@@ -125,7 +124,6 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   //AXI4 internal temp signals
   reg [C_M_AXI_ADDR_WIDTH-1 : 0] axi_awaddr;
   reg axi_awvalid;
-  reg [C_M_AXI_DATA_WIDTH-1 : 0] axi_wdata;
   reg axi_wlast;
   reg axi_wvalid;
   reg axi_bready;
@@ -134,9 +132,9 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   //size of C_M_AXI_BURST_LEN length burst in bytes
   wire [C_TRANSACTIONS_NUM+2 : 0] burst_size_bytes;
   //The burst counters are used to track the number of burst transfers of C_M_AXI_BURST_LEN burst length needed to transfer 2^C_MASTER_LENGTH bytes of data.
-  reg [C_NO_BURSTS_REQ : 0] write_burst_counter;
+  reg [20 : 0] write_burst_counter;
+  reg [29:0] sector_stride_addr_counter;  // 2**20(512M)*512(2**9), and another bit for last count
   reg start_single_burst_write;
-  reg writes_done;
   reg error_reg;
   reg burst_write_active;
   //Interface response error flags
@@ -167,8 +165,6 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   assign M_AXI_AWPROT = 3'h0;
   assign M_AXI_AWQOS = 4'h0;
   assign M_AXI_AWVALID = axi_awvalid;
-  //Write Data(W)
-  assign M_AXI_WDATA = axi_wdata;
   //All bursts are complete and aligned in this example
   assign M_AXI_WSTRB = {(C_M_AXI_DATA_WIDTH / 8) {1'b1}};
   assign M_AXI_WLAST = axi_wlast;
@@ -180,6 +176,8 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   assign burst_size_bytes = C_M_AXI_BURST_LEN * C_M_AXI_DATA_WIDTH / 8;
   assign init_txn_pulse = (!init_txn_ff2) && init_txn_ff;
 
+  // bram address is just write_index
+  assign bram_addr = write_index;
 
   //Generate a pulse to initiate AXI transaction.
   always @(posedge M_AXI_ACLK) begin
@@ -188,11 +186,18 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
       init_txn_ff  <= 1'b0;
       init_txn_ff2 <= 1'b0;
     end else begin
-      init_txn_ff  <= single_sector_burst;
+      init_txn_ff  <= start_whole_burst;
       init_txn_ff2 <= init_txn_ff;
     end
   end
-
+  always @(posedge M_AXI_ACLK) begin
+    if (M_AXI_ARESETN == 0 || start_whole_burst) begin
+      sector_stride_addr_counter <= 30'h0;
+    end else begin
+      if (wnext && axi_wlast && (write_burst_counter == (WRITE_BEATS_COUNT - 1)))
+        sector_stride_addr_counter <= sector_stride_addr_counter + 12'h200;  //512Byte
+    end
+  end
 
   //--------------------
   //Write Address Channel
@@ -226,7 +231,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   // Next address after AWREADY indicates previous address acceptance    
   always @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
-      axi_awaddr <= 'b0;
+      axi_awaddr <= sector_stride_addr_counter;
     end else if (M_AXI_AWREADY && axi_awvalid) begin
       axi_awaddr <= axi_awaddr + burst_size_bytes;
     end else axi_awaddr <= axi_awaddr;
@@ -301,15 +306,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
 
 
-  /* Write Data Generator   
-	 Data pattern is only a simple incrementing count from 0 for each burst  */
-  always @(posedge M_AXI_ACLK) begin
-    if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) axi_wdata <= 'b1;
-    //else if (wnext && axi_wlast)  
-    //  axi_wdata <= 'b0; 
-    else if (wnext) axi_wdata <= axi_wdata + 1;
-    else axi_wdata <= axi_wdata;
-  end
+
 
   //----------------------------
   //Write Response (B) Channel
@@ -355,8 +352,9 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   always @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       write_burst_counter <= 'b0;
-    end else if (M_AXI_AWREADY && axi_awvalid) begin
-      if (write_burst_counter[C_NO_BURSTS_REQ] == 1'b0) begin
+    end else if (wnext && axi_wlast) begin
+      // or (M_AXI_BVALID && axi_bready) condition for burst write inactive
+      if (write_burst_counter != WRITE_BEATS_COUNT) begin
         write_burst_counter <= write_burst_counter + 1'b1;
       end
     end else write_burst_counter <= write_burst_counter;
@@ -385,12 +383,13 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
         end
 
         INIT_WRITE:
-        if (writes_done) begin
+        if ((write_burst_counter == WRITE_BEATS_COUNT)) begin
           mst_exec_state <= IDLE;
         end else begin
           mst_exec_state <= INIT_WRITE;
-
-          if (~axi_awvalid && ~start_single_burst_write && ~burst_write_active) begin
+          // note that we add addtional single_sector_burst condition to start the burst write
+          // it is a ready signal for single sector read done by sdio_burst_reader
+          if (~axi_awvalid && ~start_single_burst_write && ~burst_write_active && single_sector_burst) begin
             start_single_burst_write <= 1'b1;
           end else begin
             start_single_burst_write <= 1'b0;  //Negate to generate a pulse          
@@ -410,19 +409,5 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     //The burst_write_active is asserted when a write burst transaction is initiated        
     else if (start_single_burst_write) burst_write_active <= 1'b1;
     else if (M_AXI_BVALID && axi_bready) burst_write_active <= 0;
-  end
-
-  // Check for last write completion.              
-
-  // This logic is to qualify the last write count with the final write      
-  // response. This demonstrates how to confirm that a write has been        
-  // committed.
-  always @(posedge M_AXI_ACLK) begin
-    if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) writes_done <= 1'b0;
-    //The writes_done should be associated with a bready response           
-    //else if (M_AXI_BVALID && axi_bready && (write_burst_counter == {(C_NO_BURSTS_REQ-1){1}}) && axi_wlast)
-    else if (M_AXI_BVALID && (write_burst_counter[C_NO_BURSTS_REQ]) && axi_bready)
-      writes_done <= 1'b1;
-    else writes_done <= writes_done;
   end
 endmodule

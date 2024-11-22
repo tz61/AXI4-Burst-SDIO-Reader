@@ -52,9 +52,8 @@ module axi4_sdio_burst_reader_v1_0 #(
 );
   wire read_single_sector_done_pulse;
   wire [5:0] bram_addr;
-  wire [63:0] bram_data;
   axi4_sdio_burst_reader_v1_0_AXI #(
-      .SDIO_BURST_SECTOR_COUNT(SDIO_BURST_SECTOR_COUNT),
+      .WRITE_BEATS_COUNT(SDIO_BURST_SECTOR_COUNT),
       .C_M_TARGET_SLAVE_BASE_ADDR(C_AXI_TARGET_SLAVE_BASE_ADDR),
       .C_M_AXI_BURST_LEN(C_AXI_BURST_LEN),
       .C_M_AXI_ID_WIDTH(C_AXI_ID_WIDTH),
@@ -62,12 +61,13 @@ module axi4_sdio_burst_reader_v1_0 #(
       .C_M_AXI_DATA_WIDTH(C_AXI_DATA_WIDTH)
   ) axi4_sdio_burst_reader_v1_0_AXI_inst (
 
+      
+      .start_whole_burst(start_whole_burst), // not necessarily be a pulse
       .single_sector_burst(read_single_sector_done_pulse),
       .TXN_DONE(axi_txn_done),
       .ERROR(axi_error),
       // Bram access to the SDIO reader
       .bram_addr(bram_addr),
-      .bram_data(bram_data),
       // Physical interface
       .M_AXI_ACLK(axi_aclk),
       .M_AXI_ARESETN(axi_aresetn),
@@ -82,7 +82,6 @@ module axi4_sdio_burst_reader_v1_0 #(
       .M_AXI_AWQOS(axi_awqos),
       .M_AXI_AWVALID(axi_awvalid),
       .M_AXI_AWREADY(axi_awready),
-      .M_AXI_WDATA(axi_wdata),
       .M_AXI_WSTRB(axi_wstrb),
       .M_AXI_WLAST(axi_wlast),
       .M_AXI_WVALID(axi_wvalid),
@@ -92,7 +91,7 @@ module axi4_sdio_burst_reader_v1_0 #(
       .M_AXI_BVALID(axi_bvalid),
       .M_AXI_BREADY(axi_bready)
   );
-  wire start_pulse;
+  wire start_pulse_sdio;
   reg start_whole_burst_ff1, start_whole_burst_ff2;
   always @(posedge axi_aclk) begin
     if (~axi_aresetn) begin
@@ -103,7 +102,7 @@ module axi4_sdio_burst_reader_v1_0 #(
       start_whole_burst_ff2 <= start_whole_burst_ff1;
     end
   end
-  assign start_pulse = start_whole_burst_ff1 & ~start_whole_burst_ff2;
+  assign start_pulse_sdio = start_whole_burst_ff1 & ~start_whole_burst_ff2;
   // Add user logic here
   sdio_burst_reader reader (
       .sdcmd(sdcmd),
@@ -111,14 +110,14 @@ module axi4_sdio_burst_reader_v1_0 #(
       .sdq(sd_data),
       .clk_100mhz(axi_aclk),
       .reset_ah(~axi_aresetn),
-      .start_pulse(start_pulse),
+      .start_pulse(start_pulse_sdio),
       //   .host_state(host_state),
       //   .found_resp(LED[14]),
       //   .ccs(LED[15]),
       //   .manufacture_id(manufacture_id),
       //   .card_current_state(LED[3:0]),
       .bram_addr(bram_addr),
-      .bram_data(bram_data),
+      .bram_data(axi_wdata),
       .input_sector_pos(SDIO_BURST_SECTOR_START),
       .sector_count(SDIO_BURST_SECTOR_COUNT),
       .read_single_sector_done_pulse(read_single_sector_done_pulse)
