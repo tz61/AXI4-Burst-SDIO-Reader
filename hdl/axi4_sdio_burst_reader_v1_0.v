@@ -107,7 +107,7 @@ module axi4_sdio_burst_reader_v1_0 #(
   sdio_burst_reader reader (
       .sdcmd(sdcmd),
       .sdclk(sdclk),
-      .sdq(sd_data),
+      .sdq(sdq),
       .clk_100mhz(axi_aclk),
       .reset_ah(~axi_aresetn),
       .start_pulse(start_pulse_sdio),

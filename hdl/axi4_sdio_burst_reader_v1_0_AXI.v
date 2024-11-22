@@ -19,7 +19,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     parameter integer C_M_AXI_DATA_WIDTH = 64
 ) (
     // Users to add ports here
-    output wire [ 5:0] bram_addr,
+    output wire [5:0] bram_addr,
     // User ports ends
     // Do not modify the ports beyond this line
 
@@ -135,6 +135,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   reg [20 : 0] write_burst_counter;
   reg [29:0] sector_stride_addr_counter;  // 2**20(512M)*512(2**9), and another bit for last count
   reg start_single_burst_write;
+  reg tx_done;
   reg error_reg;
   reg burst_write_active;
   //Interface response error flags
@@ -178,7 +179,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
   // bram address is just write_index
   assign bram_addr = write_index;
-
+  assign TXN_DONE = tx_done;
   //Generate a pulse to initiate AXI transaction.
   always @(posedge M_AXI_ACLK) begin
     // Initiates AXI transaction delay    
@@ -370,6 +371,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
       mst_exec_state           <= IDLE;
       start_single_burst_write <= 1'b0;
       ERROR                    <= 1'b0;
+      tx_done                  <= 1'b0;
     end else begin
 
       // state transition       
@@ -378,6 +380,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
         if (init_txn_pulse == 1'b1) begin
           mst_exec_state <= INIT_WRITE;
           ERROR <= 1'b0;
+          tx_done <= 1'b0;
         end else begin
           mst_exec_state <= IDLE;
         end
@@ -385,6 +388,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
         INIT_WRITE:
         if ((write_burst_counter == WRITE_BEATS_COUNT)) begin
           mst_exec_state <= IDLE;
+          tx_done <= 1'b1;
         end else begin
           mst_exec_state <= INIT_WRITE;
           // note that we add addtional single_sector_burst condition to start the burst write
