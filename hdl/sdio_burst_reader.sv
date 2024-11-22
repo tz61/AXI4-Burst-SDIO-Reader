@@ -23,10 +23,11 @@ module sdio_burst_reader (
     input logic [5:0] bram_addr,  // depth 0-63
     output logic [63:0] bram_data,
     // FSM reader status
+    output logic read_single_sector_done_pulse,  // should be a pulse, used by AXI4 Master FSM
     output logic read_all_sector_done_pulse,  // should be a pulse
     // High level input
-    input logic [19:0] input_sector_pos, // 0-1048575 sectors for first0-511.9995117 MiB
-    input logic [19:0] sector_count // max 1048575 sectors, 511.9995117 MiB
+    input logic [19:0] input_sector_pos,  // 0-1048575 sectors for first0-511.9995117 MiB
+    input logic [19:0] sector_count  // max 1048575 sectors, 511.9995117 MiB
 );
   // Note that in ILA, the states are changed, so inspect on the input of hex segment
   typedef enum logic [5:0] {
@@ -105,7 +106,7 @@ module sdio_burst_reader (
 `endif
   localparam RECVCNT_R2 = 135;  // 136 - start bit = 135
   localparam RECVCNT_notR2 = 47;  // 48 - start bit = 47
-  localparam TXCNT = 48; 
+  localparam TXCNT = 48;
   // It's okay to have resp trimmed by Synthesizer:
   // [Synth 8-3936] Found unconnected internal register 'resp_reg' and it is trimmed from '135' to '134' bits. 
   logic [134:0] resp; // 48-bit[46:0]/136-bit[134:0] response, since first bit is always 0, we use only 47-bit/135-bit
@@ -115,7 +116,7 @@ module sdio_burst_reader (
   logic [18:0] padding_cnt;
   // 256MiB = 256*1024*1024/512 = 524288 sectors, 19 bits, one bit for last sector
   // starting from 0 to sector_count-1, in total (sector_count) sectors
-  logic [19:0] cur_sector_pos; // support 0-1048575 sectors read
+  logic [19:0] cur_sector_pos;  // support 0-1048575 sectors read
   logic found_response;
   logic [15:0] rca;
   logic [31:0] card_status;  // cf. Section 4.10.1 Card status
@@ -168,11 +169,18 @@ module sdio_burst_reader (
       data_rx_tail_cnt <= 'b0;
       bumping_cnt <= 'b0;
       cur_sector_pos <= 'b0;
+      read_single_sector_done_pulse <= 0;
       read_all_sector_done_pulse <= 0;
       tmpUpperByteBuffer <= 'b0;
     end else begin
       // TODO Switch (uncomment the next line and comment above line) the following is for manually test 
       // end else if ((state < CMD16) || start_pulse || (state == CMD12_PROCESSRX)) begin
+      if (read_single_sector_done_pulse) begin
+        read_single_sector_done_pulse <= 0;
+      end
+      if (read_all_sector_done_pulse) begin
+        read_all_sector_done_pulse <= 0;
+      end
       case (state)
         // Low level states for Timing
         // An SDIO device will capture data on the rising edge of clock for all SDR modes.
@@ -263,6 +271,8 @@ module sdio_burst_reader (
               if (found_response) begin
                 // increment it here first, don't do it in CMD18_CHECKDATA
                 cur_sector_pos <= cur_sector_pos + 1;
+                // inform external module (e.g. AXI4 Master FSM) that one sector is done
+                read_single_sector_done_pulse <= 1;
               end
               state <= return_state;  // Return to CMD18_CHECKDATA
             end else begin
@@ -603,7 +613,7 @@ module sdio_burst_reader (
         // i.e. if one round of reading(including sectors from 0 to END_SECTOR_CNT) is done, then return to
         // this state for waiting another round of reading
         CMD18: begin  // R1 response, READ_MULTIPLE_BLOC
-          if (start_pulse && (sector_count != 0)) begin // prevent entering when sector_count is 0
+          if (start_pulse && (sector_count != 0)) begin  // prevent entering when sector_count is 0
             // Goto TXCMD state
             state <= TXCMD;
             reqresp_cnt <= TXCNT;
@@ -613,7 +623,7 @@ module sdio_burst_reader (
             // SDHC and SDXC Cards (CCS=1) use block unit address (512 Bytes unit).
             // i.e. sector number
             found_response <= 0;  // clear it otherwise it looks weird in manual mode
-            req <= compose_command(18, cur_sector_pos+input_sector_pos);
+            req <= compose_command(18, cur_sector_pos + input_sector_pos);
             return_state = CMD18_SENTDONE;
           end
         end
@@ -642,7 +652,7 @@ module sdio_burst_reader (
           end
         end
         CMD18_CHECKDATA: begin
-          if (found_response) begin
+          if (found_response) begin // dumb way since already checked in RXDATA's end...
             if (cur_sector_pos < sector_count) begin
               state <= RXDATA;  // waiting for next turn of read start pulse
               // reset loop for next sector
@@ -659,14 +669,12 @@ module sdio_burst_reader (
             state <= TXCMD;
             reqresp_cnt <= TXCNT;
             padding_cnt <= 2048;
-            req <= compose_command(18, cur_sector_pos+input_sector_pos);
+            req <= compose_command(18, cur_sector_pos + input_sector_pos);
             return_state = CMD18_SENTDONE;
           end
         end
         // And Stop Transmission CMD12 STOP_TRANSMISSION R1b
         CMD12: begin
-          // disable the pulse(last cycle from CMD18_CHECKDATA)
-          read_all_sector_done_pulse <= 0;
           cur_sector_pos <= 0;  // also clear sector position
           // Goto TXCMD state
           state <= TXCMD;

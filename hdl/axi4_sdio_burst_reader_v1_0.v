@@ -7,7 +7,9 @@ module axi4_sdio_burst_reader_v1_0 #(
     // User parameters ends
     // Do not modify the parameters beyond this line
 
-
+    // Parameters of the SDIO burst location
+    parameter integer SDIO_BURST_SECTOR_START = 0,
+    parameter integer SDIO_BURST_SECTOR_COUNT = 2,  // 524288 sectors for 256MB
     // Parameters of Axi Master Bus Interface AXI
     parameter C_AXI_TARGET_SLAVE_BASE_ADDR = 32'h81000000,
     parameter integer C_AXI_BURST_LEN = 64,
@@ -15,16 +17,16 @@ module axi4_sdio_burst_reader_v1_0 #(
     parameter integer C_AXI_ADDR_WIDTH = 32,
     parameter integer C_AXI_DATA_WIDTH = 64
 ) (
-    // Users to add ports here
-
-    // User ports ends
-    // Do not modify the ports beyond this line
-
-
-    // Ports of Axi Master Bus Interface AXI
-    input wire axi_init_axi_txn,
+    // SDIO ports
+    inout wire sdcmd,
+    input wire [3:0] sdq,
+    output wire sdclk,
+    // burst input
+    input wire start_whole_burst,
+    // status of the whole IP
     output wire axi_txn_done,
     output wire axi_error,
+    // Physical interface 
     input wire axi_aclk,
     input wire axi_aresetn,
     output wire [C_AXI_ID_WIDTH-1 : 0] axi_awid,
@@ -48,17 +50,25 @@ module axi4_sdio_burst_reader_v1_0 #(
     input wire axi_bvalid,
     output wire axi_bready
 );
-  // Instantiation of Axi Bus Interface AXI
+  wire read_single_sector_done_pulse;
+  wire [5:0] bram_addr;
+  wire [63:0] bram_data;
   axi4_sdio_burst_reader_v1_0_AXI #(
+      .SDIO_BURST_SECTOR_COUNT(SDIO_BURST_SECTOR_COUNT),
       .C_M_TARGET_SLAVE_BASE_ADDR(C_AXI_TARGET_SLAVE_BASE_ADDR),
       .C_M_AXI_BURST_LEN(C_AXI_BURST_LEN),
       .C_M_AXI_ID_WIDTH(C_AXI_ID_WIDTH),
       .C_M_AXI_ADDR_WIDTH(C_AXI_ADDR_WIDTH),
       .C_M_AXI_DATA_WIDTH(C_AXI_DATA_WIDTH)
   ) axi4_sdio_burst_reader_v1_0_AXI_inst (
-      .INIT_AXI_TXN(axi_init_axi_txn),
+
+      .single_sector_burst(read_single_sector_done_pulse),
       .TXN_DONE(axi_txn_done),
       .ERROR(axi_error),
+      // Bram access to the SDIO reader
+      .bram_addr(bram_addr),
+      .bram_data(bram_data),
+      // Physical interface
       .M_AXI_ACLK(axi_aclk),
       .M_AXI_ARESETN(axi_aresetn),
       .M_AXI_AWID(axi_awid),
@@ -82,9 +92,37 @@ module axi4_sdio_burst_reader_v1_0 #(
       .M_AXI_BVALID(axi_bvalid),
       .M_AXI_BREADY(axi_bready)
   );
-
+  wire start_pulse;
+  reg start_whole_burst_ff1, start_whole_burst_ff2;
+  always @(posedge axi_aclk) begin
+    if (~axi_aresetn) begin
+      start_whole_burst_ff1 <= 1'b0;
+      start_whole_burst_ff2 <= 1'b0;
+    end else begin
+      start_whole_burst_ff1 <= start_whole_burst;
+      start_whole_burst_ff2 <= start_whole_burst_ff1;
+    end
+  end
+  assign start_pulse = start_whole_burst_ff1 & ~start_whole_burst_ff2;
   // Add user logic here
-
+  sdio_burst_reader reader (
+      .sdcmd(sdcmd),
+      .sdclk(sdclk),
+      .sdq(sd_data),
+      .clk_100mhz(axi_aclk),
+      .reset_ah(~axi_aresetn),
+      .start_pulse(start_pulse),
+      //   .host_state(host_state),
+      //   .found_resp(LED[14]),
+      //   .ccs(LED[15]),
+      //   .manufacture_id(manufacture_id),
+      //   .card_current_state(LED[3:0]),
+      .bram_addr(bram_addr),
+      .bram_data(bram_data),
+      .input_sector_pos(SDIO_BURST_SECTOR_START),
+      .sector_count(SDIO_BURST_SECTOR_COUNT),
+      .read_single_sector_done_pulse(read_single_sector_done_pulse)
+  );
   // User logic ends
 
 endmodule

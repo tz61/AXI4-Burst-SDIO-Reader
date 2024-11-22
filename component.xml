@@ -1391,18 +1391,7 @@
       <spirit:file>
         <spirit:name>hdl/axi4_sdio_burst_reader_v1_0.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_4af87bf6</spirit:userFileType>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>hdl/sdio_burst_top.sv</spirit:name>
-        <spirit:fileType>systemVerilogSource</spirit:fileType>
-        <spirit:logicalName>xil_defaultlib</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>hdl/sdio_burst_reader.sv</spirit:name>
-        <spirit:fileType>systemVerilogSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_82545293</spirit:userFileType>
-        <spirit:logicalName>xil_defaultlib</spirit:logicalName>
+        <spirit:userFileType>CHECKSUM_808e49a1</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -1524,7 +1513,7 @@
       </xilinx:taxonomies>
       <xilinx:displayName>axi4_sdio_burst_reader</xilinx:displayName>
       <xilinx:coreRevision>1</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2024-11-22T17:50:48Z</xilinx:coreCreationDateTime>
+      <xilinx:coreCreationDateTime>2024-11-22T18:57:56Z</xilinx:coreCreationDateTime>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
       <xilinx:xilinxVersion>2022.2</xilinx:xilinxVersion>

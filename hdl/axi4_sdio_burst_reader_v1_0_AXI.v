@@ -3,8 +3,8 @@
 
 module axi4_sdio_burst_reader_v1_0_AXI #(
     // Users to add parameters here
-
-    // User parameters ends
+    parameter integer SDIO_BURST_SECTOR_COUNT = 2,
+    // User parameters ends 
     // Do not modify the parameters beyond this line
 
     // Base address of targeted slave
@@ -19,12 +19,13 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     parameter integer C_M_AXI_DATA_WIDTH = 64
 ) (
     // Users to add ports here
-
+    output wire [ 5:0] bram_addr,
+    input  wire [63:0] bram_data,
     // User ports ends
     // Do not modify the ports beyond this line
 
     // Initiate AXI transactions
-    input wire INIT_AXI_TXN,
+    input wire single_sector_burst,
     // Asserts when transaction is complete
     output wire TXN_DONE,
     // Asserts when ERROR is detected
@@ -187,7 +188,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
       init_txn_ff  <= 1'b0;
       init_txn_ff2 <= 1'b0;
     end else begin
-      init_txn_ff  <= INIT_AXI_TXN;
+      init_txn_ff  <= single_sector_burst;
       init_txn_ff2 <= init_txn_ff;
     end
   end
