@@ -247,7 +247,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>41f248a0</spirit:value>
+            <spirit:value>eacecce5</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -263,7 +263,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>41f248a0</spirit:value>
+            <spirit:value>eacecce5</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -277,7 +277,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>88aaab93</spirit:value>
+            <spirit:value>c11b3511</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -846,7 +846,7 @@
       <spirit:file>
         <spirit:name>hdl/axi4_sdio_burst_reader_v1_0.v</spirit:name>
         <spirit:fileType>verilogSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_506a041d</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_9b01d372</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -869,7 +869,7 @@
       <spirit:file>
         <spirit:name>xgui/axi4_sdio_burst_reader_v1_0.tcl</spirit:name>
         <spirit:fileType>tclSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_88aaab93</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_c11b3511</spirit:userFileType>
         <spirit:userFileType>XGUI_VERSION_2</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
@@ -943,12 +943,12 @@
     <spirit:parameter>
       <spirit:name>SDIO_BURST_SECTOR_START</spirit:name>
       <spirit:displayName>Sdio Burst Sector Start</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SDIO_BURST_SECTOR_START">0</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SDIO_BURST_SECTOR_START" spirit:minimum="0" spirit:maximum="1048575" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>SDIO_BURST_SECTOR_COUNT</spirit:name>
       <spirit:displayName>Sdio Burst Sector Count</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SDIO_BURST_SECTOR_COUNT">2</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SDIO_BURST_SECTOR_COUNT" spirit:minimum="0" spirit:maximum="1048575" spirit:rangeType="long">2</spirit:value>
     </spirit:parameter>
   </spirit:parameters>
   <spirit:vendorExtensions>
@@ -960,17 +960,17 @@
         <xilinx:taxonomy>AXI_Peripheral</xilinx:taxonomy>
       </xilinx:taxonomies>
       <xilinx:displayName>axi4_sdio_burst_reader</xilinx:displayName>
-      <xilinx:coreRevision>5</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2024-11-23T02:30:33Z</xilinx:coreCreationDateTime>
+      <xilinx:coreRevision>6</xilinx:coreRevision>
+      <xilinx:coreCreationDateTime>2024-11-23T03:38:56Z</xilinx:coreCreationDateTime>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
       <xilinx:xilinxVersion>2022.2</xilinx:xilinxVersion>
       <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="aa2f88f3"/>
       <xilinx:checksum xilinx:scope="addressSpaces" xilinx:value="a58deedd"/>
-      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="05f09b77"/>
+      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="0e42fc70"/>
       <xilinx:checksum xilinx:scope="ports" xilinx:value="68398328"/>
       <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="b65c0eb0"/>
-      <xilinx:checksum xilinx:scope="parameters" xilinx:value="076e2f46"/>
+      <xilinx:checksum xilinx:scope="parameters" xilinx:value="053130d9"/>
     </xilinx:packagingInfo>
   </spirit:vendorExtensions>
 </spirit:component>

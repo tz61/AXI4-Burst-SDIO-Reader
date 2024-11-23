@@ -3,7 +3,7 @@
 
 module axi4_sdio_burst_reader_v1_0_AXI #(
     // Users to add parameters here
-    parameter integer WRITE_BEATS_COUNT = 2,
+    parameter integer WRITE_BURST_COUNT = 2,
     // User parameters ends 
     // Do not modify the parameters beyond this line
 
@@ -127,11 +127,8 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   reg axi_bready;
   //write beat count in a burst
   reg [C_TRANSACTIONS_NUM : 0] write_index;
-  //size of C_M_AXI_BURST_LEN length burst in bytes
-  wire [C_TRANSACTIONS_NUM+2 : 0] burst_size_bytes;
   //The burst counters are used to track the number of burst transfers of C_M_AXI_BURST_LEN burst length needed to transfer 2^C_MASTER_LENGTH bytes of data.
   reg [20 : 0] write_burst_counter;
-  reg [29:0] sector_stride_addr_counter;  // 2**20(512M)*512(2**9), and another bit for last count
   reg start_single_burst_write;
   reg tx_done;
   reg error_reg;
@@ -171,8 +168,6 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   //Write Response (B)
   assign M_AXI_BREADY = axi_bready;
 
-  //Burst size in bytes
-  assign burst_size_bytes = C_M_AXI_BURST_LEN * C_M_AXI_DATA_WIDTH / 8;
   assign init_txn_pulse = (!init_txn_ff2) && init_txn_ff;
 
   // bram address is just write_index
@@ -187,14 +182,6 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     end else begin
       init_txn_ff  <= start_whole_burst;
       init_txn_ff2 <= init_txn_ff;
-    end
-  end
-  always @(posedge M_AXI_ACLK) begin
-    if (M_AXI_ARESETN == 0 || start_whole_burst) begin
-      sector_stride_addr_counter <= 30'h0;
-    end else begin
-      if (wnext && axi_wlast && (write_burst_counter == (WRITE_BEATS_COUNT - 1)))
-        sector_stride_addr_counter <= sector_stride_addr_counter + 12'h200;  //512Byte
     end
   end
 
@@ -230,9 +217,9 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   // Next address after AWREADY indicates previous address acceptance    
   always @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
-      axi_awaddr <= sector_stride_addr_counter;
+      axi_awaddr <= 'b0;
     end else if (M_AXI_AWREADY && axi_awvalid) begin
-      axi_awaddr <= axi_awaddr + burst_size_bytes;
+      axi_awaddr <= axi_awaddr + C_M_AXI_BURST_LEN * C_M_AXI_DATA_WIDTH / 8;// 64*64/8 = 512Byte
     end else axi_awaddr <= axi_awaddr;
   end
 
@@ -353,7 +340,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
       write_burst_counter <= 'b0;
     end else if (wnext && axi_wlast) begin
       // or (M_AXI_BVALID && axi_bready) condition for burst write inactive
-      if (write_burst_counter != WRITE_BEATS_COUNT) begin
+      if (write_burst_counter != WRITE_BURST_COUNT) begin
         write_burst_counter <= write_burst_counter + 1'b1;
       end
     end else write_burst_counter <= write_burst_counter;
@@ -384,7 +371,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
         end
 
         INIT_WRITE:
-        if ((write_burst_counter == WRITE_BEATS_COUNT)) begin
+        if ((write_burst_counter == WRITE_BURST_COUNT)) begin
           mst_exec_state <= IDLE;
           tx_done <= 1'b1;
         end else begin

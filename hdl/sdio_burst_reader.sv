@@ -27,7 +27,10 @@ module sdio_burst_reader (
     output logic read_all_sector_done_pulse,  // should be a pulse
     // High level input
     input logic [19:0] input_sector_pos,  // 0-1048575 sectors for first0-511.9995117 MiB
+    // Since it is only used via command of CMD18, so never worry about its width
+    // since it won't be used as intermediate counter
     input logic [19:0] sector_count  // max 1048575 sectors, 511.9995117 MiB
+    // the width of the above and cur_sector_pos DECIDES the max continuous read sector count
 );
   // Note that in ILA, the states are changed, so inspect on the input of hex segment
   typedef enum logic [5:0] {
@@ -663,7 +666,7 @@ module sdio_burst_reader (
           end
         end
         CMD18_CHECKDATA: begin
-          if (found_response) begin  // dumb way since already checked in RXDATA's end...
+          if (found_response) begin  // dumb way since already checked `found_response` in RXDATA's end...
             if (cur_sector_pos < sector_count) begin
               state <= RXDATA;  // waiting for next turn of read start pulse
               // reset loop for next sector

@@ -54,7 +54,7 @@ module axi4_sdio_burst_reader_v1_0 #(
   wire read_single_sector_done_pulse;
   wire [5:0] bram_addr;
   axi4_sdio_burst_reader_v1_0_AXI #(
-      .WRITE_BEATS_COUNT(SDIO_BURST_SECTOR_COUNT),
+      .WRITE_BURST_COUNT(SDIO_BURST_SECTOR_COUNT),
       .C_M_TARGET_SLAVE_BASE_ADDR(C_AXI_TARGET_SLAVE_BASE_ADDR),
       .C_M_AXI_BURST_LEN(C_AXI_BURST_LEN),
       .C_M_AXI_ID_WIDTH(C_AXI_ID_WIDTH),

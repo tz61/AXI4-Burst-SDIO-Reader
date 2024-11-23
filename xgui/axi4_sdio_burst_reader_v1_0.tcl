@@ -9,6 +9,10 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "C_AXI_ADDR_WIDTH" -parent ${Page_0}
   ipgui::add_param $IPINST -name "C_AXI_DATA_WIDTH" -parent ${Page_0} -widget comboBox
 
+  set SDIO_BURST_SECTOR_START [ipgui::add_param $IPINST -name "SDIO_BURST_SECTOR_START"]
+  set_property tooltip {Start from first 0 to  511.9995117MiB} ${SDIO_BURST_SECTOR_START}
+  set SDIO_BURST_SECTOR_COUNT [ipgui::add_param $IPINST -name "SDIO_BURST_SECTOR_COUNT"]
+  set_property tooltip {Read sector count, max ability:511.9995117 MiB(1048575)} ${SDIO_BURST_SECTOR_COUNT}
 
 }
 
