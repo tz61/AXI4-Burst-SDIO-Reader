@@ -308,8 +308,8 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   /* Burst length counter. Uses extra counter register bit to indicate terminal       
 	 count to reduce decode logic */
   always_ff @(posedge M_AXI_ACLK) begin
-    if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1 || start_single_burst_write == 1'b1) begin
-      write_index <= 0;
+    if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1 || burst_write_active == 0) begin
+      write_index <= 0; // make sure after burst is inactive, set that to 0 for correct bram_data_addr0
     end else if (wnext && (write_index != C_M_AXI_BURST_LEN - 1)) begin
       write_index <= write_index + 1;
     end else write_index <= write_index;
