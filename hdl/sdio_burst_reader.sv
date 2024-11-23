@@ -12,7 +12,7 @@ module sdio_burst_reader (
     input logic [3:0] sdq,
     // control signals
     input logic clk_100mhz,
-    input logic reset_ah,
+    input logic reset_ah,  // active high reset
     input logic start_pulse,
     output logic [5:0] host_state,
     output logic found_resp,
@@ -105,11 +105,21 @@ module sdio_burst_reader (
 `ifdef SYNTHESIS
   localparam CLK400K_CNT = 'd125;  // 100MHz/125/2 = 400kHz // real for 125
 `else
-  localparam CLK400K_CNT = CLK25M_CNT; // For simulation
+  localparam CLK400K_CNT = CLK25M_CNT;  // For simulation
 `endif
   localparam RECVCNT_R2 = 135;  // 136 - start bit = 135
   localparam RECVCNT_notR2 = 47;  // 48 - start bit = 47
   localparam TXCNT = 48;
+
+  logic [3:0] sdq_ff1;  // 1 clock delay for sdq for better sampling
+  always_ff @(posedge clk_100mhz) begin
+    if (reset_ah) begin
+      sdq_ff1 <= 4'hF; // set sdq[3:0] to logic high to avoid start bit
+    end else begin
+      sdq_ff1 <= sdq;
+    end
+  end
+
   // It's okay to have resp trimmed by Synthesizer:
   // [Synth 8-3936] Found unconnected internal register 'resp_reg' and it is trimmed from '135' to '134' bits. 
   logic [134:0] resp; // 48-bit[46:0]/136-bit[134:0] response, since first bit is always 0, we use only 47-bit/135-bit
@@ -296,12 +306,12 @@ module sdio_burst_reader (
                     if (data_rx_cnt[3:0] == 4'hF) begin
                       // have received 16 cycle * 4 bits, then store to BRAM
                       tmpSectorBuffer[datarx_addr] <= {
-                        tmpDWORDBuffer[63:60], sdq, tmpDWORDBuffer[55:0]
+                        tmpDWORDBuffer[63:60], sdq_ff1, tmpDWORDBuffer[55:0]
                       };
                       // need not to manually clear tmpDWORDBuffer, since it will be overwritten in next loop
-                    end else begin 
+                    end else begin
                       // note when data_rx_cnt[3:0] == 4'b1110, it will store into tmpDWORDBuffer[63:60]
-                      tmpDWORDBuffer[datarx_addr_offset+:4] <= sdq;
+                      tmpDWORDBuffer[datarx_addr_offset+:4] <= sdq_ff1;
                     end
 
                   end else begin  // counter increment should be on falling edge

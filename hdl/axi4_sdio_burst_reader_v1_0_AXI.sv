@@ -19,71 +19,71 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     parameter integer C_M_AXI_DATA_WIDTH = 64
 ) (
     // Users to add ports here
-    output wire [5:0] bram_addr,
+    output logic [5:0] bram_addr,
     // User ports ends
     // Do not modify the ports beyond this line
 
     // Init whole burst write
-    input wire start_whole_burst,
+    input logic start_whole_burst,
     // Initiate single sector burst write
-    input wire single_sector_burst,
+    input logic single_sector_burst,
     // Asserts when transaction is complete
-    output wire TXN_DONE,
+    output logic TXN_DONE,
     // Asserts when ERROR is detected
-    output reg ERROR,
+    output logic ERROR,
     // Global Clock Signal.
-    input wire M_AXI_ACLK,
+    input logic M_AXI_ACLK,
     // Global Reset Singal. This Signal is Active Low
-    input wire M_AXI_ARESETN,
+    input logic M_AXI_ARESETN,
     // Master Interface Write Address ID
-    output wire [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_AWID,
+    output logic [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_AWID,
     // Master Interface Write Address
-    output wire [C_M_AXI_ADDR_WIDTH-1 : 0] M_AXI_AWADDR,
+    output logic [C_M_AXI_ADDR_WIDTH-1 : 0] M_AXI_AWADDR,
     // Burst length. The burst length gives the exact number of transfers in a burst
-    output wire [7 : 0] M_AXI_AWLEN,
+    output logic [7 : 0] M_AXI_AWLEN,
     // Burst size. This signal indicates the size of each transfer in the burst
-    output wire [2 : 0] M_AXI_AWSIZE,
+    output logic [2 : 0] M_AXI_AWSIZE,
     // Burst type. The burst type and the size information, 
     // determine how the address for each transfer within the burst is calculated.
-    output wire [1 : 0] M_AXI_AWBURST,
+    output logic [1 : 0] M_AXI_AWBURST,
     // Lock type. Provides additional information about the
     // atomic characteristics of the transfer.
-    output wire M_AXI_AWLOCK,
+    output logic M_AXI_AWLOCK,
     // Memory type. This signal indicates how transactions
     // are required to progress through a system.
-    output wire [3 : 0] M_AXI_AWCACHE,
+    output logic [3 : 0] M_AXI_AWCACHE,
     // Protection type. This signal indicates the privilege
     // and security level of the transaction, and whether
     // the transaction is a data access or an instruction access.
-    output wire [2 : 0] M_AXI_AWPROT,
+    output logic [2 : 0] M_AXI_AWPROT,
     // Quality of Service, QoS identifier sent for each write transaction.
-    output wire [3 : 0] M_AXI_AWQOS,
+    output logic [3 : 0] M_AXI_AWQOS,
     // Write address valid. This signal indicates that
     // the channel is signaling valid write address and control information.
-    output wire M_AXI_AWVALID,
+    output logic M_AXI_AWVALID,
     // Write address ready. This signal indicates that
     // the slave is ready to accept an address and associated control signals
-    input wire M_AXI_AWREADY,
+    input logic M_AXI_AWREADY,
     // Write strobes. This signal indicates which byte
     // lanes hold valid data. There is one write strobe
     // bit for each eight bits of the write data bus.
-    output wire [C_M_AXI_DATA_WIDTH/8-1 : 0] M_AXI_WSTRB,
+    output logic [C_M_AXI_DATA_WIDTH/8-1 : 0] M_AXI_WSTRB,
     // Write last. This signal indicates the last transfer in a write burst.
-    output wire M_AXI_WLAST,
+    output logic M_AXI_WLAST,
     // Write valid. This signal indicates that valid write
     // data and strobes are available
-    output wire M_AXI_WVALID,
+    output logic M_AXI_WVALID,
     // Write ready. This signal indicates that the slave
     // can accept the write data.
-    input wire M_AXI_WREADY,
+    input logic M_AXI_WREADY,
     // Write response. This signal indicates the status of the write transaction.
-    input wire [1 : 0] M_AXI_BRESP,
+    input logic [1 : 0] M_AXI_BRESP,
     // Write response valid. This signal indicates that the
     // channel is signaling a valid write response.
-    input wire M_AXI_BVALID,
+    input logic M_AXI_BVALID,
     // Response ready. This signal indicates that the master
     // can accept a write response.
-    output wire M_AXI_BREADY
+    output logic M_AXI_BREADY
 );
 
 
@@ -116,30 +116,30 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
   localparam IDLE = 1'b0, INIT_WRITE = 1'b1;
 
-  reg mst_exec_state;
+  logic mst_exec_state;
 
   // AXI4LITE signals
   //AXI4 internal temp signals
-  reg [C_M_AXI_ADDR_WIDTH-1 : 0] axi_awaddr;
-  reg axi_awvalid;
-  reg axi_wlast;
-  reg axi_wvalid;
-  reg axi_bready;
+  logic [C_M_AXI_ADDR_WIDTH-1 : 0] axi_awaddr;
+  logic axi_awvalid;
+  logic axi_wlast;
+  logic axi_wvalid;
+  logic axi_bready;
   //write beat count in a burst
-  reg [C_TRANSACTIONS_NUM : 0] write_index;
+  logic [C_TRANSACTIONS_NUM : 0] write_index;
   //The burst counters are used to track the number of burst transfers of C_M_AXI_BURST_LEN burst length needed to transfer 2^C_MASTER_LENGTH bytes of data.
-  reg [20 : 0] write_burst_counter;
-  reg start_single_burst_write;
-  reg tx_done;
-  reg error_reg;
-  reg burst_write_active;
+  logic [20 : 0] write_burst_counter;
+  logic start_single_burst_write;
+  logic tx_done;
+  logic error_reg;
+  logic burst_write_active;
   //Interface response error flags
-  wire write_resp_error;
-  wire wnext;
-  reg init_txn_ff;
-  reg init_txn_ff2;
-  reg init_txn_edge;
-  wire init_txn_pulse;
+  logic write_resp_error;
+  logic wnext;
+  logic init_txn_ff;
+  logic init_txn_ff2;
+  logic init_txn_edge;
+  logic init_txn_pulse;
 
 
 
@@ -174,7 +174,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   assign bram_addr = write_index;
   assign TXN_DONE = tx_done;
   //Generate a pulse to initiate AXI transaction.
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     // Initiates AXI transaction delay    
     if (M_AXI_ARESETN == 0) begin
       init_txn_ff  <= 1'b0;
@@ -198,7 +198,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   // The address will be incremented on each accepted address transaction,
   // by burst_size_byte to point to the next address. 
 
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
 
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       axi_awvalid <= 1'b0;
@@ -215,7 +215,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
 
   // Next address after AWREADY indicates previous address acceptance    
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       axi_awaddr <= 'b0;
     end else if (M_AXI_AWREADY && axi_awvalid) begin
@@ -250,8 +250,8 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
   assign wnext = M_AXI_WREADY & axi_wvalid;
 
-  // WVALID logic, similar to the axi_awvalid always block above      
-  always @(posedge M_AXI_ACLK) begin
+  // WVALID logic, similar to the axi_awvalid always_ff block above      
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       axi_wvalid <= 1'b0;
     end  // If previously not valid, start next transaction              
@@ -264,7 +264,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     else if (wnext && axi_wlast) axi_wvalid <= 1'b0;
     else axi_wvalid <= axi_wvalid;
   end
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       axi_wlast <= 1'b0;
       // axi_wlast is asserted when the write index   
@@ -282,7 +282,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
   /* Burst length counter. Uses extra counter register bit to indicate terminal       
 	 count to reduce decode logic */
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1 || start_single_burst_write == 1'b1) begin
       write_index <= 0;
     end else if (wnext && (write_index != C_M_AXI_BURST_LEN - 1)) begin
@@ -311,7 +311,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   //The BRESP bit [1] is used indicate any errors from the interconnect or
   //slave for the entire write burst. This example will capture the error 
   //into the ERROR output. 
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       axi_bready <= 1'b0;
       // accept/acknowledge bresp with axi_bready by the master
@@ -327,7 +327,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
   //Flag any write response errors        
   assign write_resp_error = axi_bready & M_AXI_BVALID & M_AXI_BRESP[1];
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       error_reg <= 1'b0;
     end else if (write_resp_error) begin
@@ -335,7 +335,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     end else error_reg <= error_reg;
   end
 
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       write_burst_counter <= 'b0;
     end else if (wnext && axi_wlast) begin
@@ -349,7 +349,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
   //implement master command interface state machine        
 
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 1'b0) begin
       // reset condition        
       // All the signals are assigned default values under reset condition
@@ -392,7 +392,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   // burst_write_active signal is asserted when there is a burst write transaction          
   // is initiated by the assertion of start_single_burst_write. burst_write_active          
   // signal remains asserted until the burst write is accepted by the slave 
-  always @(posedge M_AXI_ACLK) begin
+  always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) burst_write_active <= 1'b0;
 
     //The burst_write_active is asserted when a write burst transaction is initiated        

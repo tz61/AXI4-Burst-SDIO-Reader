@@ -18,41 +18,41 @@ module axi4_sdio_burst_reader_v1_0 #(
     parameter integer C_AXI_DATA_WIDTH = 64
 ) (
     // SDIO ports
-    inout wire sdcmd,
-    input wire [3:0] sdq,
-    output wire sdclk,
+    inout logic sdcmd,
+    input logic [3:0] sdq,
+    output logic sdclk,
     // burst input
-    input wire start_whole_burst,  // not necessarily be a pulse
+    input logic start_whole_burst,  // not necessarily be a pulse
     // status of the whole IP
-    output wire axi_txn_done,// long lasting signal until next round of burst(cleared after beginning of next burst) 
-    output wire axi_error,
-    output wire [5:0] sdio_host_state,
-    output wire [3:0] card_current_state,
+    output logic axi_txn_done,// long lasting signal until next round of burst(cleared after beginning of next burst) 
+    output logic axi_error,
+    output logic [5:0] sdio_host_state,
+    output logic [3:0] card_current_state,
     // Physical interface 
-    input wire axi_aclk,
-    input wire axi_aresetn,
-    output wire [C_AXI_ID_WIDTH-1 : 0] axi_awid,
-    output wire [C_AXI_ADDR_WIDTH-1 : 0] axi_awaddr,
-    output wire [7 : 0] axi_awlen,
-    output wire [2 : 0] axi_awsize,
-    output wire [1 : 0] axi_awburst,
-    output wire axi_awlock,
-    output wire [3 : 0] axi_awcache,
-    output wire [2 : 0] axi_awprot,
-    output wire [3 : 0] axi_awqos,
-    output wire axi_awvalid,
-    input wire axi_awready,
-    output wire [C_AXI_DATA_WIDTH-1 : 0] axi_wdata,
-    output wire [C_AXI_DATA_WIDTH/8-1 : 0] axi_wstrb,
-    output wire axi_wlast,
-    output wire axi_wvalid,
-    input wire axi_wready,
-    input wire [1 : 0] axi_bresp,
-    input wire axi_bvalid,
-    output wire axi_bready
+    input logic axi_aclk,
+    input logic axi_aresetn,
+    output logic [C_AXI_ID_WIDTH-1 : 0] axi_awid,
+    output logic [C_AXI_ADDR_WIDTH-1 : 0] axi_awaddr,
+    output logic [7 : 0] axi_awlen,
+    output logic [2 : 0] axi_awsize,
+    output logic [1 : 0] axi_awburst,
+    output logic axi_awlock,
+    output logic [3 : 0] axi_awcache,
+    output logic [2 : 0] axi_awprot,
+    output logic [3 : 0] axi_awqos,
+    output logic axi_awvalid,
+    input logic axi_awready,
+    output logic [C_AXI_DATA_WIDTH-1 : 0] axi_wdata,
+    output logic [C_AXI_DATA_WIDTH/8-1 : 0] axi_wstrb,
+    output logic axi_wlast,
+    output logic axi_wvalid,
+    input logic axi_wready,
+    input logic [1 : 0] axi_bresp,
+    input logic axi_bvalid,
+    output logic axi_bready
 );
-  wire read_single_sector_done_pulse;
-  wire [5:0] bram_addr;
+  logic read_single_sector_done_pulse;
+  logic [5:0] bram_addr;
   axi4_sdio_burst_reader_v1_0_AXI #(
       .WRITE_BURST_COUNT(SDIO_BURST_SECTOR_COUNT),
       .C_M_TARGET_SLAVE_BASE_ADDR(C_AXI_TARGET_SLAVE_BASE_ADDR),
@@ -91,8 +91,8 @@ module axi4_sdio_burst_reader_v1_0 #(
       .M_AXI_BVALID(axi_bvalid),
       .M_AXI_BREADY(axi_bready)
   );
-  wire start_pulse_sdio;  // generate a pulse from start_whole_burst
-  reg start_whole_burst_ff1, start_whole_burst_ff2;
+  logic start_pulse_sdio;  // generate a pulse from start_whole_burst
+  logic start_whole_burst_ff1, start_whole_burst_ff2;
   always @(posedge axi_aclk) begin
     if (~axi_aresetn) begin
       start_whole_burst_ff1 <= 1'b0;
