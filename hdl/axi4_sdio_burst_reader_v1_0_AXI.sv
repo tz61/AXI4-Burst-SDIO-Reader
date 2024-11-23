@@ -19,7 +19,8 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     parameter integer C_M_AXI_DATA_WIDTH = 64
 ) (
     // Users to add ports here
-    output logic [5:0] bram_addr,
+    output logic [ 5:0] bram_addr,
+    input  logic [63:0] bram_data,
     // User ports ends
     // Do not modify the ports beyond this line
 
@@ -64,6 +65,8 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     // Write address ready. This signal indicates that
     // the slave is ready to accept an address and associated control signals
     input logic M_AXI_AWREADY,
+    // Write data.
+    output logic [C_M_AXI_DATA_WIDTH-1 : 0] M_AXI_WDATA,
     // Write strobes. This signal indicates which byte
     // lanes hold valid data. There is one write strobe
     // bit for each eight bits of the write data bus.
@@ -131,7 +134,6 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   logic [20 : 0] write_burst_counter;
   logic start_single_burst_write;
   logic tx_done;
-  logic error_reg;
   logic burst_write_active;
   //Interface response error flags
   logic write_resp_error;
@@ -170,8 +172,31 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
   assign init_txn_pulse = (!init_txn_ff2) && init_txn_ff;
 
-  // bram address is just write_index
-  assign bram_addr = write_index;
+  // bram address is just write_index + 1, as bram has one cycle delay
+  logic [63:0] bram_data_addr0;  // store the BRAM's data at address 0
+  always_comb begin
+    if (burst_write_active) begin  // get the ahead address if a new turn of burst starts
+      bram_addr = write_index + 1;
+    end else begin  // restore the not biassed address for bram_data_addr0 fetch
+      bram_addr = write_index;
+    end
+  end
+  // actual M_AXI_WDATA mux
+  always_comb begin
+    if (write_index == 0) begin
+      M_AXI_WDATA = bram_data_addr0;
+    end else begin  // get the ahead data
+      M_AXI_WDATA = bram_data;
+    end
+  end
+  always_ff @(posedge M_AXI_ACLK) begin
+    if (M_AXI_ARESETN == 0) begin
+      bram_data_addr0 <= 64'h0;
+    end else if (single_sector_burst) begin  // it is a pulse before burst_write_active is 1
+      bram_data_addr0 <= bram_data;
+    end
+  end
+
   assign TXN_DONE = tx_done;
   //Generate a pulse to initiate AXI transaction.
   always_ff @(posedge M_AXI_ACLK) begin
@@ -219,7 +244,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
       axi_awaddr <= 'b0;
     end else if (M_AXI_AWREADY && axi_awvalid) begin
-      axi_awaddr <= axi_awaddr + C_M_AXI_BURST_LEN * C_M_AXI_DATA_WIDTH / 8;// 64*64/8 = 512Byte
+      axi_awaddr <= axi_awaddr + C_M_AXI_BURST_LEN * C_M_AXI_DATA_WIDTH / 8;  // 64*64/8 = 512Byte
     end else axi_awaddr <= axi_awaddr;
   end
 
@@ -327,13 +352,6 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
 
   //Flag any write response errors        
   assign write_resp_error = axi_bready & M_AXI_BVALID & M_AXI_BRESP[1];
-  always_ff @(posedge M_AXI_ACLK) begin
-    if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
-      error_reg <= 1'b0;
-    end else if (write_resp_error) begin
-      error_reg <= 1'b1;
-    end else error_reg <= error_reg;
-  end
 
   always_ff @(posedge M_AXI_ACLK) begin
     if (M_AXI_ARESETN == 0 || init_txn_pulse == 1'b1) begin
@@ -370,18 +388,22 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
           mst_exec_state <= IDLE;
         end
 
-        INIT_WRITE:
-        if ((write_burst_counter == WRITE_BURST_COUNT)) begin
-          mst_exec_state <= IDLE;
-          tx_done <= 1'b1;
-        end else begin
-          mst_exec_state <= INIT_WRITE;
-          // note that we add addtional single_sector_burst condition to start the burst write
-          // it is a ready signal for single sector read done by sdio_burst_reader
-          if (~axi_awvalid && ~start_single_burst_write && ~burst_write_active && single_sector_burst) begin
-            start_single_burst_write <= 1'b1;
+        INIT_WRITE: begin
+          ERROR <= write_resp_error;
+          // if burst count is not reached still in this state
+          // (i.e. if beats reached but total burst count not reached then still return to this state)
+          if ((write_burst_counter == WRITE_BURST_COUNT)) begin
+            mst_exec_state <= IDLE;
+            tx_done <= 1'b1;
           end else begin
-            start_single_burst_write <= 1'b0;  //Negate to generate a pulse          
+            mst_exec_state <= INIT_WRITE;
+            // note that we add addtional single_sector_burst condition to start the burst write
+            // it is a ready signal for single sector read done by sdio_burst_reader
+            if (~axi_awvalid && ~start_single_burst_write && ~burst_write_active && single_sector_burst) begin
+              start_single_burst_write <= 1'b1;
+            end else begin
+              start_single_burst_write <= 1'b0;  //Negate to generate a pulse          
+            end
           end
         end
       endcase

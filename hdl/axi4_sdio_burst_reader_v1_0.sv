@@ -53,6 +53,7 @@ module axi4_sdio_burst_reader_v1_0 #(
 );
   logic read_single_sector_done_pulse;
   logic [5:0] bram_addr;
+  logic [63:0] bram_data;
   axi4_sdio_burst_reader_v1_0_AXI #(
       .WRITE_BURST_COUNT(SDIO_BURST_SECTOR_COUNT),
       .C_M_TARGET_SLAVE_BASE_ADDR(C_AXI_TARGET_SLAVE_BASE_ADDR),
@@ -69,6 +70,7 @@ module axi4_sdio_burst_reader_v1_0 #(
       .ERROR(axi_error),
       // Bram access to the SDIO reader
       .bram_addr(bram_addr),
+      .bram_data(bram_data),
       // Physical interface
       .M_AXI_ACLK(axi_aclk),
       .M_AXI_ARESETN(axi_aresetn),
@@ -83,6 +85,7 @@ module axi4_sdio_burst_reader_v1_0 #(
       .M_AXI_AWQOS(axi_awqos),
       .M_AXI_AWVALID(axi_awvalid),
       .M_AXI_AWREADY(axi_awready),
+      .M_AXI_WDATA(axi_wdata),
       .M_AXI_WSTRB(axi_wstrb),
       .M_AXI_WLAST(axi_wlast),
       .M_AXI_WVALID(axi_wvalid),
@@ -117,7 +120,7 @@ module axi4_sdio_burst_reader_v1_0 #(
       //   .manufacture_id(manufacture_id),
       .card_current_state(card_current_state), // cf. Section 4.10.1(Card Status), not host status
       .bram_addr(bram_addr),
-      .bram_data(axi_wdata),
+      .bram_data(bram_data),
       .input_sector_pos(SDIO_BURST_SECTOR_START),
       .sector_count(SDIO_BURST_SECTOR_COUNT),
       .read_single_sector_done_pulse(read_single_sector_done_pulse)
