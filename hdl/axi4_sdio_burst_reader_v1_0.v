@@ -47,7 +47,6 @@ module axi4_sdio_burst_reader_v1_0 #(
     output wire axi_wlast,
     output wire axi_wvalid,
     input wire axi_wready,
-    input wire [C_AXI_ID_WIDTH-1 : 0] axi_bid,
     input wire [1 : 0] axi_bresp,
     input wire axi_bvalid,
     output wire axi_bready
@@ -88,7 +87,6 @@ module axi4_sdio_burst_reader_v1_0 #(
       .M_AXI_WLAST(axi_wlast),
       .M_AXI_WVALID(axi_wvalid),
       .M_AXI_WREADY(axi_wready),
-      .M_AXI_BID(axi_bid),
       .M_AXI_BRESP(axi_bresp),
       .M_AXI_BVALID(axi_bvalid),
       .M_AXI_BREADY(axi_bready)

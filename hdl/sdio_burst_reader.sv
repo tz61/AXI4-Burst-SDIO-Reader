@@ -18,7 +18,7 @@ module sdio_burst_reader (
     output logic found_resp,
     output logic ccs,
     output logic [7:0] manufacture_id,
-    output logic [3:0] card_current_state, // current state is part of card status([12:9])
+    output logic [3:0] card_current_state,  // current state is part of card status([12:9])
     // BRAM interface
     input logic [5:0] bram_addr,  // depth 0-63
     output logic [63:0] bram_data,
@@ -102,7 +102,7 @@ module sdio_burst_reader (
 `ifdef SYNTHESIS
   localparam CLK400K_CNT = 'd125;  // 100MHz/125/2 = 400kHz // real for 125
 `else
-  localparam CLK400K_CNT = CLK25M_CNT;
+  localparam CLK400K_CNT = CLK25M_CNT; // For simulation
 `endif
   localparam RECVCNT_R2 = 135;  // 136 - start bit = 135
   localparam RECVCNT_notR2 = 47;  // 48 - start bit = 47
@@ -126,7 +126,7 @@ module sdio_burst_reader (
   // For one sector 512 Bytes, 512*8bit=4096 bit, AXI4 Width=64, 4096/64 = 64 Beats in single Burst
   // So the depth of BRAM is also 64
   logic [63:0] tmpSectorBuffer[64];
-  logic [3:0] tmpUpperByteBuffer;
+  logic [63:0] tmpDWORDBuffer;  // save whole 60 +4 bit to write into BRAM in one cycle
   logic [5:0] datarx_addr, datarx_addr_offset;
   assign card_current_state = card_status[12:9];
   assign found_resp = found_response;
@@ -142,8 +142,15 @@ module sdio_burst_reader (
   sdio_host_state_t state, return_state;
   assign host_state = state;
   always_comb begin
-    datarx_addr = data_rx_cnt[9:4];
-    datarx_addr_offset = data_rx_cnt[3:1] << 3;
+    datarx_addr = data_rx_cnt[9:4];  // 16 cycles for 64 bit
+    // cycle number(data_rx_cnt) and byte offset mapping
+    // c0      c1      c2         c3       c4         c5     ... c14       c15
+    // 4(7:4), 0(3:0), 12(15:12), 8(11:8), 20(23:20), 16(19:16)  60(63:60) 56(59:56)
+    if (~data_rx_cnt[0]) begin
+      datarx_addr_offset = data_rx_cnt[3:1] << 3 + 4;  // first cycle get upper 4 bit of this Byte
+    end else begin
+      datarx_addr_offset = data_rx_cnt[3:1] << 3;
+    end
   end
   always_ff @(posedge clk_100mhz) begin
     // avoid assign or Lab 7.1 XD
@@ -171,7 +178,7 @@ module sdio_burst_reader (
       cur_sector_pos <= 'b0;
       read_single_sector_done_pulse <= 0;
       read_all_sector_done_pulse <= 0;
-      tmpUpperByteBuffer <= 'b0;
+      tmpDWORDBuffer <= 'b0;
     end else begin
       // TODO Switch (uncomment the next line and comment above line) the following is for manually test 
       // end else if ((state < CMD16) || start_pulse || (state == CMD12_PROCESSRX)) begin
@@ -283,13 +290,17 @@ module sdio_burst_reader (
                   sdclk <= ~sdclk;
                   clock_counter <= 'b0;
                   if (~sdclk) begin  // sample on rising edge
-                    if (~data_rx_cnt[0]) begin
-                      tmpUpperByteBuffer <= sdq;  // first cycle get upper 4 bit of this Byte
-                    end else begin  // second cycle compose the Byte and store it
-                      tmpSectorBuffer[datarx_addr][datarx_addr_offset+:8] <= {
-                        tmpUpperByteBuffer, sdq
+                    if (data_rx_cnt[3:0] == 4'hF) begin
+                      // have received 16 cycle * 4 bits, then store to BRAM
+                      tmpSectorBuffer[datarx_addr] <= {
+                        tmpDWORDBuffer[63:60], sdq, tmpDWORDBuffer[55:0]
                       };
+                      // need not to manually clear tmpDWORDBuffer, since it will be overwritten in next loop
+                    end else begin 
+                      // note when data_rx_cnt[3:0] == 4'b1110, it will store into tmpDWORDBuffer[63:60]
+                      tmpDWORDBuffer[datarx_addr_offset+:4] <= sdq;
                     end
+
                   end else begin  // counter increment should be on falling edge
                     // note here we add 1, since index is 0-based needed for addressing
                     data_rx_cnt <= data_rx_cnt + 1;
@@ -652,7 +663,7 @@ module sdio_burst_reader (
           end
         end
         CMD18_CHECKDATA: begin
-          if (found_response) begin // dumb way since already checked in RXDATA's end...
+          if (found_response) begin  // dumb way since already checked in RXDATA's end...
             if (cur_sector_pos < sector_count) begin
               state <= RXDATA;  // waiting for next turn of read start pulse
               // reset loop for next sector

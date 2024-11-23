@@ -76,8 +76,6 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     // Write ready. This signal indicates that the slave
     // can accept the write data.
     input wire M_AXI_WREADY,
-    // Master Interface Write Response.
-    input wire [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_BID,
     // Write response. This signal indicates the status of the write transaction.
     input wire [1 : 0] M_AXI_BRESP,
     // Write response valid. This signal indicates that the
@@ -116,7 +114,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   // initialize read transactions and comparison of read data with the 
   // written data words.
 
-  parameter IDLE = 1'b0, INIT_WRITE = 1'b1;
+  localparam IDLE = 1'b0, INIT_WRITE = 1'b1;
 
   reg mst_exec_state;
 
