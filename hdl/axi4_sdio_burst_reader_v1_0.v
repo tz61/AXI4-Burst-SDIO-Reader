@@ -22,10 +22,12 @@ module axi4_sdio_burst_reader_v1_0 #(
     input wire [3:0] sdq,
     output wire sdclk,
     // burst input
-    input wire start_whole_burst,
+    input wire start_whole_burst,  // not necessarily be a pulse
     // status of the whole IP
-    output wire axi_txn_done,
+    output wire axi_txn_done,// long lasting signal until next round of burst(cleared after beginning of next burst) 
     output wire axi_error,
+    output wire [5:0] sdio_host_state,
+    output wire [3:0] card_current_state,
     // Physical interface 
     input wire axi_aclk,
     input wire axi_aresetn,
@@ -61,8 +63,8 @@ module axi4_sdio_burst_reader_v1_0 #(
       .C_M_AXI_DATA_WIDTH(C_AXI_DATA_WIDTH)
   ) axi4_sdio_burst_reader_v1_0_AXI_inst (
 
-      
-      .start_whole_burst(start_whole_burst), // not necessarily be a pulse
+
+      .start_whole_burst(start_whole_burst),  // not necessarily be a pulse
       .single_sector_burst(read_single_sector_done_pulse),
       .TXN_DONE(axi_txn_done),
       .ERROR(axi_error),
@@ -91,7 +93,7 @@ module axi4_sdio_burst_reader_v1_0 #(
       .M_AXI_BVALID(axi_bvalid),
       .M_AXI_BREADY(axi_bready)
   );
-  wire start_pulse_sdio;
+  wire start_pulse_sdio;  // generate a pulse from start_whole_burst
   reg start_whole_burst_ff1, start_whole_burst_ff2;
   always @(posedge axi_aclk) begin
     if (~axi_aresetn) begin
@@ -111,11 +113,11 @@ module axi4_sdio_burst_reader_v1_0 #(
       .clk_100mhz(axi_aclk),
       .reset_ah(~axi_aresetn),
       .start_pulse(start_pulse_sdio),
-      //   .host_state(host_state),
+      .host_state(sdio_host_state),
       //   .found_resp(LED[14]),
       //   .ccs(LED[15]),
       //   .manufacture_id(manufacture_id),
-      //   .card_current_state(LED[3:0]),
+      .card_current_state(card_current_state), // cf. Section 4.10.1(Card Status), not host status
       .bram_addr(bram_addr),
       .bram_data(axi_wdata),
       .input_sector_pos(SDIO_BURST_SECTOR_START),

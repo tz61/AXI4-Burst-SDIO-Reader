@@ -18,7 +18,7 @@ module sdio_burst_reader (
     output logic found_resp,
     output logic ccs,
     output logic [7:0] manufacture_id,
-    output logic [3:0] card_current_state,
+    output logic [3:0] card_current_state, // current state is part of card status([12:9])
     // BRAM interface
     input logic [5:0] bram_addr,  // depth 0-63
     output logic [63:0] bram_data,
