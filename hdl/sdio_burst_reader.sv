@@ -114,7 +114,7 @@ module sdio_burst_reader (
   logic [3:0] sdq_ff1;  // 1 clock delay for sdq for better sampling
   always_ff @(posedge clk_100mhz) begin
     if (reset_ah) begin
-      sdq_ff1 <= 4'hF; // set sdq[3:0] to logic high to avoid start bit
+      sdq_ff1 <= 4'hF;  // set sdq[3:0] to logic high to avoid start bit
     end else begin
       sdq_ff1 <= sdq;
     end
@@ -356,9 +356,12 @@ module sdio_burst_reader (
         end
         // High level Host control states
         IDLE: begin
-          if (start_pulse) begin
-            state <= CMD0;
-          end
+          // if use Manual mode then uncomment this, if use in combination with AXI4 Master FSM
+          // such signal(start_pulse) will be issued twice to AXI4 burst writer, and will affect
+          // its operation
+          // if (start_pulse) begin
+          state <= CMD0;
+          // end
         end
         CMD0: begin  // GO_IDLE_STATE no response
           // Goto TXCMD state
