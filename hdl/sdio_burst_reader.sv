@@ -160,7 +160,7 @@ module sdio_burst_reader (
     // c0      c1      c2         c3       c4         c5     ... c14       c15
     // 4(7:4), 0(3:0), 12(15:12), 8(11:8), 20(23:20), 16(19:16)  60(63:60) 56(59:56)
     if (~data_rx_cnt[0]) begin
-      datarx_addr_offset = data_rx_cnt[3:1] << 3 + 4;  // first cycle get upper 4 bit of this Byte
+      datarx_addr_offset = (data_rx_cnt[3:1] << 3) + 4;  // first cycle get upper 4 bit of this Byte
     end else begin
       datarx_addr_offset = data_rx_cnt[3:1] << 3;
     end
@@ -305,13 +305,14 @@ module sdio_burst_reader (
                   if (~sdclk) begin  // sample on rising edge
                     if (data_rx_cnt[3:0] == 4'hF) begin
                       // have received 16 cycle * 4 bits, then store to BRAM
+                      // TODO clock compensation using sdq_ff1
                       tmpSectorBuffer[datarx_addr] <= {
-                        tmpDWORDBuffer[63:60], sdq_ff1, tmpDWORDBuffer[55:0]
+                        tmpDWORDBuffer[63:60], sdq, tmpDWORDBuffer[55:0]
                       };
                       // need not to manually clear tmpDWORDBuffer, since it will be overwritten in next loop
                     end else begin
                       // note when data_rx_cnt[3:0] == 4'b1110, it will store into tmpDWORDBuffer[63:60]
-                      tmpDWORDBuffer[datarx_addr_offset+:4] <= sdq_ff1;
+                      tmpDWORDBuffer[datarx_addr_offset+:4] <= sdq;
                     end
 
                   end else begin  // counter increment should be on falling edge
@@ -344,9 +345,10 @@ module sdio_burst_reader (
                   padding_cnt <= 0;
                 end
               end else begin
-                // scan start bit of data on rising edge, sdq[0] or other bit like sdq[1] also works
-                if (~sdq[0]) begin
+                // scan start bit of data on rising edge, all sdq must be low
+                if (sdq == 4'h0) begin
                   found_response <= 1;
+                  // TODO do clock compensation
                 end
               end
             end
