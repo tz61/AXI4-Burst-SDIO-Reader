@@ -24,6 +24,7 @@ module axi4_sdio_burst_reader_v1_0 #(
     // burst input
     input logic start_whole_burst,  // not necessarily be a pulse
     // status of the whole IP
+    output logic read_all_sector_done_pulse, // pulse when sdio_reader reads all sectors(debug use)
     output logic axi_txn_done,// long lasting signal until next round of burst(cleared after beginning of next burst) 
     output logic axi_error,
     output logic [5:0] sdio_host_state,
@@ -123,7 +124,8 @@ module axi4_sdio_burst_reader_v1_0 #(
       .bram_data(bram_data),
       .input_sector_pos(SDIO_BURST_SECTOR_START),
       .sector_count(SDIO_BURST_SECTOR_COUNT),
-      .read_single_sector_done_pulse(read_single_sector_done_pulse)
+      .read_single_sector_done_pulse(read_single_sector_done_pulse),
+      .read_all_sector_done_pulse(read_all_sector_done_pulse) // debug use
   );
   // User logic ends
 

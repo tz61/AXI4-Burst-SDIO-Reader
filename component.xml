@@ -247,7 +247,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>599cda85</spirit:value>
+            <spirit:value>cb6331b3</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -263,7 +263,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>599cda85</spirit:value>
+            <spirit:value>cb6331b3</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -359,6 +359,19 @@
         <spirit:name>start_whole_burst</spirit:name>
         <spirit:wire>
           <spirit:direction>in</spirit:direction>
+          <spirit:wireTypeDefs>
+            <spirit:wireTypeDef>
+              <spirit:typeName>logic</spirit:typeName>
+              <spirit:viewNameRef>xilinx_verilogsynthesis</spirit:viewNameRef>
+              <spirit:viewNameRef>xilinx_verilogbehavioralsimulation</spirit:viewNameRef>
+            </spirit:wireTypeDef>
+          </spirit:wireTypeDefs>
+        </spirit:wire>
+      </spirit:port>
+      <spirit:port>
+        <spirit:name>read_all_sector_done_pulse</spirit:name>
+        <spirit:wire>
+          <spirit:direction>out</spirit:direction>
           <spirit:wireTypeDefs>
             <spirit:wireTypeDef>
               <spirit:typeName>logic</spirit:typeName>
@@ -846,7 +859,7 @@
       <spirit:file>
         <spirit:name>hdl/axi4_sdio_burst_reader_v1_0.sv</spirit:name>
         <spirit:fileType>systemVerilogSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_0935c413</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_aef88ba0</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -960,15 +973,15 @@
         <xilinx:taxonomy>AXI_Peripheral</xilinx:taxonomy>
       </xilinx:taxonomies>
       <xilinx:displayName>axi4_sdio_burst_reader</xilinx:displayName>
-      <xilinx:coreRevision>10</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2024-11-23T17:42:36Z</xilinx:coreCreationDateTime>
+      <xilinx:coreRevision>12</xilinx:coreRevision>
+      <xilinx:coreCreationDateTime>2024-11-23T19:23:03Z</xilinx:coreCreationDateTime>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
       <xilinx:xilinxVersion>2022.2</xilinx:xilinxVersion>
       <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="aa2f88f3"/>
       <xilinx:checksum xilinx:scope="addressSpaces" xilinx:value="a58deedd"/>
-      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="457d76b5"/>
-      <xilinx:checksum xilinx:scope="ports" xilinx:value="076884eb"/>
+      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="c0d3a9cd"/>
+      <xilinx:checksum xilinx:scope="ports" xilinx:value="c88e128d"/>
       <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="b65c0eb0"/>
       <xilinx:checksum xilinx:scope="parameters" xilinx:value="053130d9"/>
     </xilinx:packagingInfo>

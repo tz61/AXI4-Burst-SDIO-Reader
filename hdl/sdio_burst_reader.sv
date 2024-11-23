@@ -641,7 +641,7 @@ module sdio_burst_reader (
         // This state (CMD18) also is a IDLE state for waiting external start pulse
         // i.e. if one round of reading(including sectors from 0 to END_SECTOR_CNT) is done, then return to
         // this state for waiting another round of reading
-        CMD18: begin  // R1 response, READ_MULTIPLE_BLOC
+        CMD18: begin  // R1 response, READ_MULTIPLE_BLOC  'h23
           if (start_pulse && (sector_count != 0)) begin  // prevent entering when sector_count is 0
             // Goto TXCMD state
             state <= TXCMD;
@@ -656,14 +656,14 @@ module sdio_burst_reader (
             return_state = CMD18_SENTDONE;
           end
         end
-        CMD18_SENTDONE: begin
+        CMD18_SENTDONE: begin // 'h24
           state <= RXRESP;
           reqresp_cnt <= RECVCNT_notR2;
           padding_cnt <= 2048;
           found_response <= 0;
           return_state = CMD18_PROCESSRX;
         end
-        CMD18_PROCESSRX: begin
+        CMD18_PROCESSRX: begin // 'h25
           if (found_response) begin
             state <= RXDATA;
             data_rx_cnt <= 0;  // note that start growing from 0
@@ -676,18 +676,22 @@ module sdio_burst_reader (
 
             card_status <= resp[39:8];  // cf. Section 4.9.1 R1(normal response)
             return_state = CMD18_CHECKDATA;
-          end else begin
-            state <= CMD18;  // retry
+          end else begin  // retry
+            state <= TXCMD;
+            reqresp_cnt <= TXCNT;
+            padding_cnt <= 2048;
+            req <= compose_command(18, cur_sector_pos + input_sector_pos);
+            return_state = CMD18_SENTDONE;
           end
         end
-        CMD18_CHECKDATA: begin
+        CMD18_CHECKDATA: begin // 'h26
           if (found_response) begin  // dumb way since already checked `found_response` in RXDATA's end...
             if (cur_sector_pos < sector_count) begin
               state <= RXDATA;  // waiting for next turn of read start pulse
               // reset loop for next sector
               data_rx_cnt <= 0;
               data_rx_tail_cnt <= 16+1+4;  // 16 cycle for crc16, 1 fpr end bit, another 4 for padding
-              padding_cnt <= 2048;
+              padding_cnt <= 500000; // wait at most 10ms
               found_response <= 0;
             end else begin
               read_all_sector_done_pulse <= 1;
@@ -703,7 +707,7 @@ module sdio_burst_reader (
           end
         end
         // And Stop Transmission CMD12 STOP_TRANSMISSION R1b
-        CMD12: begin
+        CMD12: begin // 'h27
           cur_sector_pos <= 0;  // also clear sector position
           // Goto TXCMD state
           state <= TXCMD;
