@@ -110,7 +110,7 @@ module sdio_burst_reader (
   localparam RECVCNT_R2 = 135;  // 136 - start bit = 135
   localparam RECVCNT_notR2 = 47;  // 48 - start bit = 47
   localparam TXCNT = 48;
-
+  logic sdq_compensate;
   logic [3:0] sdq_ff1;  // 1 clock delay for sdq for better sampling
   always_ff @(posedge clk_100mhz) begin
     if (reset_ah) begin
@@ -192,6 +192,7 @@ module sdio_burst_reader (
       read_single_sector_done_pulse <= 0;
       read_all_sector_done_pulse <= 0;
       tmpDWORDBuffer <= 'b0;
+      sdq_compensate <= 0;
     end else begin
       // TODO Switch (uncomment the next line and comment above line) the following is for manually test 
       // end else if ((state < CMD16) || start_pulse || (state == CMD12_PROCESSRX)) begin
@@ -305,14 +306,24 @@ module sdio_burst_reader (
                   if (~sdclk) begin  // sample on rising edge
                     if (data_rx_cnt[3:0] == 4'hF) begin
                       // have received 16 cycle * 4 bits, then store to BRAM
-                      // TODO clock compensation using sdq_ff1
-                      tmpSectorBuffer[datarx_addr] <= {
-                        tmpDWORDBuffer[63:60], sdq, tmpDWORDBuffer[55:0]
-                      };
+                      // clock compensation using sdq_ff1
+                      if (sdq_compensate) begin
+                        tmpSectorBuffer[datarx_addr] <= {
+                          tmpDWORDBuffer[63:60], sdq_ff1, tmpDWORDBuffer[55:0]
+                        };
+                      end else begin
+                        tmpSectorBuffer[datarx_addr] <= {
+                          tmpDWORDBuffer[63:60], sdq, tmpDWORDBuffer[55:0]
+                        };
+                      end
                       // need not to manually clear tmpDWORDBuffer, since it will be overwritten in next loop
                     end else begin
                       // note when data_rx_cnt[3:0] == 4'b1110, it will store into tmpDWORDBuffer[63:60]
-                      tmpDWORDBuffer[datarx_addr_offset+:4] <= sdq;
+                      if (sdq_compensate) begin
+                        tmpDWORDBuffer[datarx_addr_offset+:4] <= sdq_ff1;
+                      end else begin
+                        tmpDWORDBuffer[datarx_addr_offset+:4] <= sdq;
+                      end
                     end
 
                   end else begin  // counter increment should be on falling edge
@@ -341,14 +352,22 @@ module sdio_burst_reader (
               // decrement counter on falling edge, make sure after exiting padding state, sdclk is low
               if (sdclk) begin
                 padding_cnt <= padding_cnt - 1;
+                if (~found_response) begin
+                  if (sdq != 4'hF) begin
+                    sdq_compensate <= 1;
+                    found_response <= 1;
+                  end
+                end
                 if (found_response) begin
                   padding_cnt <= 0;
                 end
               end else begin
                 // scan start bit of data on rising edge, all sdq must be low
-                if (sdq == 4'h0) begin
-                  found_response <= 1;
-                  // TODO do clock compensation
+                if (~found_response) begin
+                  if (sdq != 4'hF) begin
+                    found_response <= 1;
+                    sdq_compensate <= 0;
+                  end
                 end
               end
             end
@@ -656,14 +675,14 @@ module sdio_burst_reader (
             return_state = CMD18_SENTDONE;
           end
         end
-        CMD18_SENTDONE: begin // 'h24
+        CMD18_SENTDONE: begin  // 'h24
           state <= RXRESP;
           reqresp_cnt <= RECVCNT_notR2;
           padding_cnt <= 2048;
           found_response <= 0;
           return_state = CMD18_PROCESSRX;
         end
-        CMD18_PROCESSRX: begin // 'h25
+        CMD18_PROCESSRX: begin  // 'h25
           if (found_response) begin
             state <= RXDATA;
             data_rx_cnt <= 0;  // note that start growing from 0
@@ -684,14 +703,14 @@ module sdio_burst_reader (
             return_state = CMD18_SENTDONE;
           end
         end
-        CMD18_CHECKDATA: begin // 'h26
+        CMD18_CHECKDATA: begin  // 'h26
           if (found_response) begin  // dumb way since already checked `found_response` in RXDATA's end...
             if (cur_sector_pos < sector_count) begin
               state <= RXDATA;  // waiting for next turn of read start pulse
               // reset loop for next sector
               data_rx_cnt <= 0;
               data_rx_tail_cnt <= 16+1+4;  // 16 cycle for crc16, 1 fpr end bit, another 4 for padding
-              padding_cnt <= 500000; // wait at most 10ms
+              padding_cnt <= 500000;  // wait at most 10ms
               found_response <= 0;
             end else begin
               read_all_sector_done_pulse <= 1;
@@ -707,7 +726,7 @@ module sdio_burst_reader (
           end
         end
         // And Stop Transmission CMD12 STOP_TRANSMISSION R1b
-        CMD12: begin // 'h27
+        CMD12: begin  // 'h27
           cur_sector_pos <= 0;  // also clear sector position
           // Goto TXCMD state
           state <= TXCMD;
