@@ -2,13 +2,6 @@
 `timescale 1 ns / 1 ps
 
 module axi4_sdio_burst_reader_v1_0_AXI #(
-    // Users to add parameters here
-    parameter integer WRITE_BURST_COUNT = 2,
-    // User parameters ends 
-    // Do not modify the parameters beyond this line
-
-    // Base address of targeted slave
-    parameter C_M_TARGET_SLAVE_BASE_ADDR = 32'h81000000,
     // Burst Length. Supports 1, 2, 4, 8, 16, 32, 64, 128, 256 burst lengths
     parameter integer C_M_AXI_BURST_LEN = 64,
     // Thread ID Width
@@ -18,6 +11,9 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
     // Width of Data Bus
     parameter integer C_M_AXI_DATA_WIDTH = 64
 ) (
+    // Base address of targeted slave
+    input logic [31:0] target_slave_base_addr,
+    input logic [31:0] write_sector_count,
     // Users to add ports here
     output logic [ 5:0] bram_addr,
     input  logic [63:0] bram_data,
@@ -131,7 +127,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   //write beat count in a burst
   logic [C_TRANSACTIONS_NUM : 0] write_index;
   //The burst counters are used to track the number of burst transfers of C_M_AXI_BURST_LEN burst length needed to transfer 2^C_MASTER_LENGTH bytes of data.
-  logic [20 : 0] write_burst_counter;
+  logic [31 : 0] write_burst_counter;
   logic start_single_burst_write;
   logic tx_done;
   logic burst_write_active;
@@ -150,7 +146,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
   //I/O Connections. Write Address (AW)
   assign M_AXI_AWID = 'b0;
   //The AXI address is a concatenation of the target base address + active offset range
-  assign M_AXI_AWADDR = C_M_TARGET_SLAVE_BASE_ADDR + axi_awaddr;
+  assign M_AXI_AWADDR = target_slave_base_addr + axi_awaddr;
   //Burst LENgth is number of transaction beats, minus 1
   assign M_AXI_AWLEN = C_M_AXI_BURST_LEN - 1;
   //Size should be C_M_AXI_DATA_WIDTH, in 2^SIZE bytes, otherwise narrow bursts are used
@@ -358,7 +354,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
       write_burst_counter <= 'b0;
     end else if (wnext && axi_wlast) begin
       // or (M_AXI_BVALID && axi_bready) condition for burst write inactive
-      if (write_burst_counter != WRITE_BURST_COUNT) begin
+      if (write_burst_counter != write_sector_count) begin
         write_burst_counter <= write_burst_counter + 1'b1;
       end
     end else write_burst_counter <= write_burst_counter;
@@ -392,7 +388,7 @@ module axi4_sdio_burst_reader_v1_0_AXI #(
           ERROR <= write_resp_error;
           // if burst count is not reached still in this state
           // (i.e. if beats reached but total burst count not reached then still return to this state)
-          if ((write_burst_counter == WRITE_BURST_COUNT)) begin
+          if ((write_burst_counter == write_sector_count)) begin
             mst_exec_state <= IDLE;
             tx_done <= 1'b1;
           end else begin

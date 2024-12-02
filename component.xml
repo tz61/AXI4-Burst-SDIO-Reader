@@ -247,7 +247,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>3353eb74</spirit:value>
+            <spirit:value>bf933099</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -263,7 +263,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>3353eb74</spirit:value>
+            <spirit:value>bf933099</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -277,7 +277,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>c11b3511</spirit:value>
+            <spirit:value>e4e6e281</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -359,6 +359,57 @@
         <spirit:name>start_whole_burst</spirit:name>
         <spirit:wire>
           <spirit:direction>in</spirit:direction>
+          <spirit:wireTypeDefs>
+            <spirit:wireTypeDef>
+              <spirit:typeName>logic</spirit:typeName>
+              <spirit:viewNameRef>xilinx_verilogsynthesis</spirit:viewNameRef>
+              <spirit:viewNameRef>xilinx_verilogbehavioralsimulation</spirit:viewNameRef>
+            </spirit:wireTypeDef>
+          </spirit:wireTypeDefs>
+        </spirit:wire>
+      </spirit:port>
+      <spirit:port>
+        <spirit:name>input_sector_pos</spirit:name>
+        <spirit:wire>
+          <spirit:direction>in</spirit:direction>
+          <spirit:vector>
+            <spirit:left spirit:format="long">31</spirit:left>
+            <spirit:right spirit:format="long">0</spirit:right>
+          </spirit:vector>
+          <spirit:wireTypeDefs>
+            <spirit:wireTypeDef>
+              <spirit:typeName>logic</spirit:typeName>
+              <spirit:viewNameRef>xilinx_verilogsynthesis</spirit:viewNameRef>
+              <spirit:viewNameRef>xilinx_verilogbehavioralsimulation</spirit:viewNameRef>
+            </spirit:wireTypeDef>
+          </spirit:wireTypeDefs>
+        </spirit:wire>
+      </spirit:port>
+      <spirit:port>
+        <spirit:name>sector_count</spirit:name>
+        <spirit:wire>
+          <spirit:direction>in</spirit:direction>
+          <spirit:vector>
+            <spirit:left spirit:format="long">31</spirit:left>
+            <spirit:right spirit:format="long">0</spirit:right>
+          </spirit:vector>
+          <spirit:wireTypeDefs>
+            <spirit:wireTypeDef>
+              <spirit:typeName>logic</spirit:typeName>
+              <spirit:viewNameRef>xilinx_verilogsynthesis</spirit:viewNameRef>
+              <spirit:viewNameRef>xilinx_verilogbehavioralsimulation</spirit:viewNameRef>
+            </spirit:wireTypeDef>
+          </spirit:wireTypeDefs>
+        </spirit:wire>
+      </spirit:port>
+      <spirit:port>
+        <spirit:name>target_slave_base_addr</spirit:name>
+        <spirit:wire>
+          <spirit:direction>in</spirit:direction>
+          <spirit:vector>
+            <spirit:left spirit:format="long">31</spirit:left>
+            <spirit:right spirit:format="long">0</spirit:right>
+          </spirit:vector>
           <spirit:wireTypeDefs>
             <spirit:wireTypeDef>
               <spirit:typeName>logic</spirit:typeName>
@@ -771,12 +822,6 @@
     </spirit:ports>
     <spirit:modelParameters>
       <spirit:modelParameter xsi:type="spirit:nameValueTypeType" spirit:dataType="integer">
-        <spirit:name>C_AXI_TARGET_SLAVE_BASE_ADDR</spirit:name>
-        <spirit:displayName>C AXI TARGET SLAVE BASE ADDR</spirit:displayName>
-        <spirit:description>Base address of targeted slave</spirit:description>
-        <spirit:value spirit:format="bitString" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_AXI_TARGET_SLAVE_BASE_ADDR" spirit:order="3" spirit:bitStringLength="32">0x81000000</spirit:value>
-      </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>C_AXI_BURST_LEN</spirit:name>
         <spirit:displayName>C AXI BURST LEN</spirit:displayName>
         <spirit:description>Burst Length. Supports 1, 2, 4, 8, 16, 32, 64, 128, 256 burst lengths</spirit:description>
@@ -799,16 +844,6 @@
         <spirit:displayName>C AXI DATA WIDTH</spirit:displayName>
         <spirit:description>Width of Data Bus</spirit:description>
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_AXI_DATA_WIDTH" spirit:order="7" spirit:rangeType="long">64</spirit:value>
-      </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
-        <spirit:name>SDIO_BURST_SECTOR_START</spirit:name>
-        <spirit:displayName>Sdio Burst Sector Start</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.SDIO_BURST_SECTOR_START">0</spirit:value>
-      </spirit:modelParameter>
-      <spirit:modelParameter spirit:dataType="integer">
-        <spirit:name>SDIO_BURST_SECTOR_COUNT</spirit:name>
-        <spirit:displayName>Sdio Burst Sector Count</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.SDIO_BURST_SECTOR_COUNT">2</spirit:value>
       </spirit:modelParameter>
     </spirit:modelParameters>
   </spirit:model>
@@ -859,7 +894,7 @@
       <spirit:file>
         <spirit:name>hdl/axi4_sdio_burst_reader_v1_0.sv</spirit:name>
         <spirit:fileType>systemVerilogSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_aef88ba0</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_76e21b30</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -882,7 +917,7 @@
       <spirit:file>
         <spirit:name>xgui/axi4_sdio_burst_reader_v1_0.tcl</spirit:name>
         <spirit:fileType>tclSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_c11b3511</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_e4e6e281</spirit:userFileType>
         <spirit:userFileType>XGUI_VERSION_2</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
@@ -905,12 +940,6 @@
   </spirit:fileSets>
   <spirit:description>AXI4 SDIO Burst reader, bump out Sdcard to AXI4 interface</spirit:description>
   <spirit:parameters>
-    <spirit:parameter>
-      <spirit:name>C_AXI_TARGET_SLAVE_BASE_ADDR</spirit:name>
-      <spirit:displayName>C AXI TARGET SLAVE BASE ADDR</spirit:displayName>
-      <spirit:description>Base address of targeted slave</spirit:description>
-      <spirit:value spirit:format="bitString" spirit:resolve="user" spirit:id="PARAM_VALUE.C_AXI_TARGET_SLAVE_BASE_ADDR" spirit:order="3" spirit:bitStringLength="32">0x81000000</spirit:value>
-    </spirit:parameter>
     <spirit:parameter>
       <spirit:name>C_AXI_BURST_LEN</spirit:name>
       <spirit:displayName>C AXI BURST LEN</spirit:displayName>
@@ -953,16 +982,6 @@
       <spirit:name>Component_Name</spirit:name>
       <spirit:value spirit:resolve="user" spirit:id="PARAM_VALUE.Component_Name" spirit:order="1">axi4_sdio_burst_reader_v1_0</spirit:value>
     </spirit:parameter>
-    <spirit:parameter>
-      <spirit:name>SDIO_BURST_SECTOR_START</spirit:name>
-      <spirit:displayName>Sdio Burst Sector Start</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SDIO_BURST_SECTOR_START" spirit:minimum="0" spirit:maximum="1048575" spirit:rangeType="long">0</spirit:value>
-    </spirit:parameter>
-    <spirit:parameter>
-      <spirit:name>SDIO_BURST_SECTOR_COUNT</spirit:name>
-      <spirit:displayName>Sdio Burst Sector Count</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.SDIO_BURST_SECTOR_COUNT" spirit:minimum="0" spirit:maximum="1048575" spirit:rangeType="long">2</spirit:value>
-    </spirit:parameter>
   </spirit:parameters>
   <spirit:vendorExtensions>
     <xilinx:coreExtensions>
@@ -973,17 +992,17 @@
         <xilinx:taxonomy>AXI_Peripheral</xilinx:taxonomy>
       </xilinx:taxonomies>
       <xilinx:displayName>axi4_sdio_burst_reader</xilinx:displayName>
-      <xilinx:coreRevision>13</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2024-12-02T07:17:01Z</xilinx:coreCreationDateTime>
+      <xilinx:coreRevision>17</xilinx:coreRevision>
+      <xilinx:coreCreationDateTime>2024-12-02T22:03:05Z</xilinx:coreCreationDateTime>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
       <xilinx:xilinxVersion>2022.2</xilinx:xilinxVersion>
       <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="aa2f88f3"/>
       <xilinx:checksum xilinx:scope="addressSpaces" xilinx:value="a58deedd"/>
-      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="9fc39d34"/>
-      <xilinx:checksum xilinx:scope="ports" xilinx:value="c88e128d"/>
-      <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="b65c0eb0"/>
-      <xilinx:checksum xilinx:scope="parameters" xilinx:value="053130d9"/>
+      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="1bce5559"/>
+      <xilinx:checksum xilinx:scope="ports" xilinx:value="5a04aa2c"/>
+      <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="fa3a6c62"/>
+      <xilinx:checksum xilinx:scope="parameters" xilinx:value="4b86b868"/>
     </xilinx:packagingInfo>
   </spirit:vendorExtensions>
 </spirit:component>

@@ -7,11 +7,7 @@ module axi4_sdio_burst_reader_v1_0 #(
     // User parameters ends
     // Do not modify the parameters beyond this line
 
-    // Parameters of the SDIO burst location
-    parameter integer SDIO_BURST_SECTOR_START = 0,
-    parameter integer SDIO_BURST_SECTOR_COUNT = 2,  // 524288 sectors for 256MB
     // Parameters of Axi Master Bus Interface AXI
-    parameter C_AXI_TARGET_SLAVE_BASE_ADDR = 32'h81000000,
     parameter integer C_AXI_BURST_LEN = 64,
     parameter integer C_AXI_ID_WIDTH = 1,
     parameter integer C_AXI_ADDR_WIDTH = 32,
@@ -23,6 +19,10 @@ module axi4_sdio_burst_reader_v1_0 #(
     output logic sdclk,
     // burst input
     input logic start_whole_burst,  // not necessarily be a pulse
+    // location
+    input logic [31:0] input_sector_pos,
+    input logic [31:0] sector_count,
+    input logic [31:0] target_slave_base_addr,
     // status of the whole IP
     output logic read_all_sector_done_pulse, // pulse when sdio_reader reads all sectors(debug use)
     output logic axi_txn_done,// long lasting signal until next round of burst(cleared after beginning of next burst) 
@@ -56,15 +56,13 @@ module axi4_sdio_burst_reader_v1_0 #(
   logic [5:0] bram_addr;
   logic [63:0] bram_data;
   axi4_sdio_burst_reader_v1_0_AXI #(
-      .WRITE_BURST_COUNT(SDIO_BURST_SECTOR_COUNT),
-      .C_M_TARGET_SLAVE_BASE_ADDR(C_AXI_TARGET_SLAVE_BASE_ADDR),
       .C_M_AXI_BURST_LEN(C_AXI_BURST_LEN),
       .C_M_AXI_ID_WIDTH(C_AXI_ID_WIDTH),
       .C_M_AXI_ADDR_WIDTH(C_AXI_ADDR_WIDTH),
       .C_M_AXI_DATA_WIDTH(C_AXI_DATA_WIDTH)
   ) axi4_sdio_burst_reader_v1_0_AXI_inst (
-
-
+      .write_sector_count(sector_count),
+      .target_slave_base_addr(target_slave_base_addr),
       .start_whole_burst(start_whole_burst),  // not necessarily be a pulse
       .single_sector_burst(read_single_sector_done_pulse),
       .TXN_DONE(axi_txn_done),
@@ -122,8 +120,8 @@ module axi4_sdio_burst_reader_v1_0 #(
       .card_current_state(card_current_state), // cf. Section 4.10.1(Card Status), not host status
       .bram_addr(bram_addr),
       .bram_data(bram_data),
-      .input_sector_pos(SDIO_BURST_SECTOR_START),
-      .sector_count(SDIO_BURST_SECTOR_COUNT),
+      .input_sector_pos(input_sector_pos),
+      .sector_count(sector_count),
       .read_single_sector_done_pulse(read_single_sector_done_pulse),
       .read_all_sector_done_pulse(read_all_sector_done_pulse) // debug use
   );
